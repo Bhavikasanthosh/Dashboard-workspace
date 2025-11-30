@@ -1,10 +1,14 @@
 <template>
   <div class="layout">
-    <Navbar />
+    <!-- FULL-WIDTH NAVBAR AT THE TOP -->
+    <Navbar class="top-nav" />
 
-    <div class="body-section">
+    <div class="main-wrapper">
+      <!-- LEFT SIDEBAR -->
       <Sidebar />
-      <main class="content">
+
+      <!-- MAIN CONTENT -->
+      <main class="page-area">
         <router-view />
       </main>
     </div>
@@ -12,27 +16,44 @@
 </template>
 
 <script setup>
-import Sidebar from "./components/Sidebar.vue"
-import Navbar from "./components/Navbar.vue"
+import Sidebar from './components/Sidebar.vue'
+import Navbar from './components/Navbar.vue'
 </script>
 
 <style>
+/* FULL PAGE CONTAINER */
 .layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
-.body-section {
-  display: flex;
-  flex: 1;
+/* NAVBAR FULL WIDTH */
+.top-nav {
+  width: 100%;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  padding: 15px 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.content {
+/* SIDEBAR + CONTENT LAYOUT */
+.main-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* SIDEBAR stays LEFT */
+main-wrapper > Sidebar {
+  flex-shrink: 0;
+}
+
+/* MAIN CONTENT AREA (EXPANDS FULLY) */
+.page-area {
   flex: 1;
-  padding: 40px;
-  background: #f8fafc;
-  border-radius: 12px;
-  margin: 20px;
+  padding: 30px 40px;
 }
 </style>
