@@ -15,6 +15,11 @@
       </div>
     </div>
 
+    <!-- Priority Pie Chart -->
+    <div class="priority-chart-box" v-if="tasks.length > 0">
+      <canvas id="priorityChart"></canvas>
+    </div>
+
     <!-- Add New Task -->
     <div class="task-input">
       <input
@@ -23,31 +28,48 @@
         placeholder="Add a new task..."
         @keyup.enter="addTask"
       />
+
       <input
         v-model="newTaskDate"
         type="date"
         class="date-picker"
       />
+
+      <!-- PRIORITY DROPDOWN -->
+      <select v-model="newPriority" class="priority-select">
+        <option disabled value="">Priority</option>
+        <option value="high">High 🔴</option>
+        <option value="medium">Medium 🟠</option>
+        <option value="low">Low 🟢</option>
+      </select>
+
       <button @click="addTask">Add</button>
     </div>
 
     <!-- Task List -->
     <div class="task-list">
       <div
-        v-for="(task, index) in tasks"
+        v-for="(task, index) in sortedTasks"
         :key="index"
         class="task-card"
         :class="taskClasses(task)"
       >
         <div class="left">
           <input type="checkbox" v-model="task.done" />
+
           <div class="task-info">
             <span class="task-text">{{ task.text }}</span>
+
             <small v-if="task.date" class="due-date">
               Due: {{ formatDate(task.date) }}
             </small>
           </div>
         </div>
+
+        <!-- PRIORITY BADGE -->
+        <span class="priority-badge" :class="task.priority">
+          {{ task.priority }}
+        </span>
 
         <button class="delete-btn" @click="deleteTask(index)">✖</button>
       </div>
@@ -57,6 +79,8 @@
 </template>
 
 <script>
+import { Chart } from "chart.js/auto";
+
 export default {
   name: "TasksView",
 
@@ -64,7 +88,9 @@ export default {
     return {
       newTask: "",
       newTaskDate: "",
+      newPriority: "",
       tasks: JSON.parse(localStorage.getItem("tasks") || "[]"),
+      chart: null,
     };
   },
 
@@ -75,21 +101,31 @@ export default {
     progressPercent() {
       if (this.tasks.length === 0) return 0;
       return Math.round((this.completedTasks / this.tasks.length) * 100);
-    }
+    },
+
+    // SORTING: High → Medium → Low
+    sortedTasks() {
+      const order = { high: 1, medium: 2, low: 3 };
+      return [...this.tasks].sort((a, b) => {
+        return (order[a.priority] || 4) - (order[b.priority] || 4);
+      });
+    },
   },
 
   methods: {
     addTask() {
-      if (!this.newTask.trim()) return;
+      if (!this.newTask.trim() || !this.newPriority) return;
 
       this.tasks.push({
         text: this.newTask,
         done: false,
         date: this.newTaskDate || null,
+        priority: this.newPriority,
       });
 
       this.newTask = "";
       this.newTaskDate = "";
+      this.newPriority = "";
       this.saveTasks();
     },
 
@@ -123,15 +159,54 @@ export default {
 
       return "";
     },
+
+    // PIE CHART RENDER
+    renderPriorityChart() {
+      if (this.chart) this.chart.destroy();
+
+      const counts = { high: 0, medium: 0, low: 0 };
+
+      this.tasks.forEach(task => {
+        if (task.priority === "high") counts.high++;
+        else if (task.priority === "medium") counts.medium++;
+        else if (task.priority === "low") counts.low++;
+      });
+
+      const ctx = document.getElementById("priorityChart");
+
+      this.chart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["High", "Medium", "Low"],
+          datasets: [
+            {
+              data: [counts.high, counts.medium, counts.low],
+              backgroundColor: ["#ef4444", "#f59e0b", "#10b981"],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom" },
+          },
+        },
+      });
+    },
   },
 
   watch: {
     tasks: {
       handler() {
         this.saveTasks();
+        this.renderPriorityChart();
       },
       deep: true,
     },
+  },
+
+  mounted() {
+    this.renderPriorityChart();
   },
 };
 </script>
@@ -174,6 +249,12 @@ export default {
   transition: width 0.3s ease;
 }
 
+/* Pie chart container */
+.priority-chart-box {
+  max-width: 300px;
+  margin: 25px auto;
+}
+
 /* Input section */
 .task-input {
   display: flex;
@@ -195,18 +276,11 @@ export default {
   border: 1px solid #cbd5e1;
 }
 
-.task-input button {
-  background: #6366f1;
-  color: white;
-  padding: 12px 20px;
+.priority-select {
+  padding: 12px 10px;
   border-radius: 8px;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.task-input button:hover {
-  background: #4f46e5;
+  border: 1px solid #cbd5e1;
+  background: white;
 }
 
 /* Task list */
@@ -273,5 +347,24 @@ export default {
 
 .delete-btn:hover {
   background: #dc2626;
+}
+
+/* PRIORITY BADGES */
+.priority-badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: white;
+}
+
+.priority-badge.high {
+  background: #ef4444;
+}
+.priority-badge.medium {
+  background: #f59e0b;
+}
+.priority-badge.low {
+  background: #10b981;
 }
 </style>
