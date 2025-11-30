@@ -1,10 +1,17 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+mongoose
+  .connect("mongodb://127.0.0.1:27017/workspace_dashboard")
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.log("❌ MongoDB connection failed:", err));
+
 
 // Test route
 const testRoutes = require("./routes/test");
@@ -20,7 +27,7 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-const PORT = 9000;  // required port
+const PORT = 9000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
