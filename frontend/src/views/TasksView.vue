@@ -3,7 +3,6 @@
 
     <h1 class="heading">Tasks</h1>
 
-    <!-- Progress Bar -->
     <div class="progress-container" v-if="tasks.length > 0">
       <p>{{ completedTasks }} / {{ tasks.length }} tasks completed</p>
 
@@ -15,12 +14,10 @@
       </div>
     </div>
 
-    <!-- Priority Pie Chart -->
     <div class="priority-chart-box" v-if="tasks.length > 0">
       <canvas id="priorityChart"></canvas>
     </div>
 
-    <!-- Add New Task -->
     <div class="task-input">
       <input
         v-model="newTask"
@@ -35,7 +32,6 @@
         class="date-picker"
       />
 
-      <!-- PRIORITY DROPDOWN -->
       <select v-model="newPriority" class="priority-select">
         <option disabled value="">Priority</option>
         <option value="high">High 🔴</option>
@@ -46,16 +42,19 @@
       <button @click="addTask">Add</button>
     </div>
 
-    <!-- Task List -->
     <div class="task-list">
       <div
         v-for="(task, index) in sortedTasks"
-        :key="index"
+        :key="task._id"
         class="task-card"
         :class="taskClasses(task)"
       >
         <div class="left">
-          <input type="checkbox" v-model="task.done" />
+          <input
+            type="checkbox"
+            v-model="task.done"
+            @change="toggleTaskStatus(task)"
+          />
 
           <div class="task-info">
             <span class="task-text">{{ task.text }}</span>
@@ -66,12 +65,11 @@
           </div>
         </div>
 
-        <!-- PRIORITY BADGE -->
         <span class="priority-badge" :class="task.priority">
           {{ task.priority }}
         </span>
 
-        <button class="delete-btn" @click="deleteTask(index)">✖</button>
+        <button class="delete-btn" @click="deleteTask(task._id)">✖</button>
       </div>
     </div>
 
@@ -89,7 +87,7 @@ export default {
       newTask: "",
       newTaskDate: "",
       newPriority: "",
-      tasks: JSON.parse(localStorage.getItem("tasks") || "[]"),
+      tasks: [], // Initialize empty, will fill from DB
       chart: null,
     };
   },
@@ -107,38 +105,97 @@ export default {
     sortedTasks() {
       const order = { high: 1, medium: 2, low: 3 };
       return [...this.tasks].sort((a, b) => {
-        return (order[a.priority] || 4) - (order[b.priority] || 4);
+        const priorityA = a.priority ? a.priority.toLowerCase() : 'medium';
+        const priorityB = b.priority ? b.priority.toLowerCase() : 'medium';
+        return (order[priorityA] || 4) - (order[priorityB] || 4);
       });
     },
   },
 
   methods: {
-    addTask() {
+    // 1. GET TASKS
+    async fetchTasks() {
+      try {
+        const res = await fetch("/api/tasks");
+        if (!res.ok) throw new Error("Failed to fetch tasks");
+        const data = await res.json();
+        this.tasks = data;
+        this.renderPriorityChart();
+      } catch (err) {
+        console.error(err);
+      }
+    },
+
+    // 2. CREATE TASK
+    async addTask() {
       if (!this.newTask.trim() || !this.newPriority) return;
 
-      this.tasks.push({
+      const payload = {
         text: this.newTask,
         done: false,
         date: this.newTaskDate || null,
         priority: this.newPriority,
-      });
+      };
 
-      this.newTask = "";
-      this.newTaskDate = "";
-      this.newPriority = "";
-      this.saveTasks();
+      try {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const createdTask = await res.json();
+          this.tasks.push(createdTask); // Add to local list
+
+          // Reset form
+          this.newTask = "";
+          this.newTaskDate = "";
+          this.newPriority = "";
+          this.renderPriorityChart();
+        }
+      } catch (err) {
+        console.error("Error adding task:", err);
+      }
     },
 
-    deleteTask(index) {
-      this.tasks.splice(index, 1);
-      this.saveTasks();
+    // 3. DELETE TASK
+    async deleteTask(id) {
+      if (!confirm("Are you sure you want to delete this task?")) return;
+
+      try {
+        const res = await fetch(`/api/tasks/${id}`, {
+          method: "DELETE",
+        });
+
+        if (res.ok) {
+          // Remove locally using filter
+          this.tasks = this.tasks.filter(t => t._id !== id);
+          this.renderPriorityChart();
+        }
+      } catch (err) {
+        console.error("Error deleting task:", err);
+      }
     },
 
-    saveTasks() {
-      localStorage.setItem("tasks", JSON.stringify(this.tasks));
+    // 4. UPDATE STATUS (Check/Uncheck)
+    async toggleTaskStatus(task) {
+      try {
+        await fetch(`/api/tasks/${task._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ done: task.done }),
+        });
+        // We don't need to do anything else as v-model already updated the UI
+      } catch (err) {
+        console.error("Error updating task:", err);
+        // Revert UI if API fails
+        task.done = !task.done;
+      }
     },
 
     formatDate(date) {
+      if (!date) return "";
       const d = new Date(date);
       return d.toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -162,56 +219,67 @@ export default {
 
     // PIE CHART RENDER
     renderPriorityChart() {
-      if (this.chart) this.chart.destroy();
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+
+      if (this.tasks.length === 0) return;
 
       const counts = { high: 0, medium: 0, low: 0 };
 
       this.tasks.forEach(task => {
-        if (task.priority === "high") counts.high++;
-        else if (task.priority === "medium") counts.medium++;
-        else if (task.priority === "low") counts.low++;
+        // Safe check for lowercase to match your select values
+        const p = task.priority ? task.priority.toLowerCase() : 'medium';
+        if (counts[p] !== undefined) counts[p]++;
+        else counts['medium']++; // Fallback
       });
 
-      const ctx = document.getElementById("priorityChart");
+      // Wait for next DOM update ensuring canvas exists
+      this.$nextTick(() => {
+        const canvas = document.getElementById("priorityChart");
+        if (!canvas) return;
 
-      this.chart = new Chart(ctx, {
-        type: "pie",
-        data: {
-          labels: ["High", "Medium", "Low"],
-          datasets: [
-            {
-              data: [counts.high, counts.medium, counts.low],
-              backgroundColor: ["#ef4444", "#f59e0b", "#10b981"],
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: "bottom" },
+        const ctx = canvas.getContext("2d");
+        this.chart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["High", "Medium", "Low"],
+            datasets: [
+              {
+                data: [counts.high, counts.medium, counts.low],
+                backgroundColor: ["#ef4444", "#f59e0b", "#10b981"],
+              },
+            ],
           },
-        },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "bottom" },
+            },
+          },
+        });
       });
     },
   },
 
   watch: {
-    tasks: {
-      handler() {
-        this.saveTasks();
-        this.renderPriorityChart();
-      },
-      deep: true,
-    },
+    // Removed deep watcher to prevent auto-saving every keystroke to DB.
+    // Instead we save specifically on actions (add, delete, toggle).
+    tasks() {
+      // Re-render chart if tasks array changes length roughly
+      // But we call renderPriorityChart manually in CRUD methods usually
+    }
   },
 
   mounted() {
-    this.renderPriorityChart();
+    this.fetchTasks();
   },
 };
 </script>
 
 <style>
+/* ... (Your existing styles remain exactly the same) ... */
 .tasks-page {
   max-width: 750px;
   margin: 0 auto;
