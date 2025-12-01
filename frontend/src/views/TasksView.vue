@@ -1,78 +1,89 @@
 <template>
-  <div class="tasks-page">
+  <div class="container">
+    <h1 class="page-title">My Tasks</h1>
 
-    <h1 class="heading">Tasks</h1>
+    <div v-if="tasks.length > 0" class="stats-container">
+      <div class="progress-section">
+        <div class="progress-info">
+          <span>Progress</span>
+          <span class="progress-text">{{ completedTasks }} / {{ tasks.length }} done</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+        </div>
+      </div>
 
-    <div class="progress-container" v-if="tasks.length > 0">
-      <p>{{ completedTasks }} / {{ tasks.length }} tasks completed</p>
-
-      <div class="progress-bar">
-        <div
-          class="progress-fill"
-          :style="{ width: progressPercent + '%' }"
-        ></div>
+      <div class="chart-box">
+        <canvas id="priorityChart"></canvas>
       </div>
     </div>
 
-    <div class="priority-chart-box" v-if="tasks.length > 0">
-      <canvas id="priorityChart"></canvas>
-    </div>
+    <div class="create-section">
+      <div class="input-wrapper">
+        <input
+          v-model="newTask"
+          type="text"
+          class="task-input-field"
+          placeholder="Add a new task..."
+          @keyup.enter="addTask"
+        />
 
-    <div class="task-input">
-      <input
-        v-model="newTask"
-        type="text"
-        placeholder="Add a new task..."
-        @keyup.enter="addTask"
-      />
+        <div class="form-actions">
+          <input
+            v-model="newTaskDate"
+            type="date"
+            class="date-picker"
+          />
 
-      <input
-        v-model="newTaskDate"
-        type="date"
-        class="date-picker"
-      />
+          <select v-model="newPriority" class="priority-select">
+            <option disabled value="">Priority</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
 
-      <select v-model="newPriority" class="priority-select">
-        <option disabled value="">Priority</option>
-        <option value="high">High 🔴</option>
-        <option value="medium">Medium 🟠</option>
-        <option value="low">Low 🟢</option>
-      </select>
-
-      <button @click="addTask">Add</button>
+          <button @click="addTask" class="btn-primary">Add</button>
+        </div>
+      </div>
     </div>
 
     <div class="task-list">
       <div
-        v-for="(task, index) in sortedTasks"
+        v-for="task in sortedTasks"
         :key="task._id"
         class="task-card"
-        :class="taskClasses(task)"
+        :class="{ completed: task.done }"
       >
-        <div class="left">
-          <input
-            type="checkbox"
-            v-model="task.done"
-            @change="toggleTaskStatus(task)"
-          />
+        <div class="task-left">
+          <label class="checkbox-wrapper">
+            <input
+              type="checkbox"
+              v-model="task.done"
+              @change="toggleTaskStatus(task)"
+            />
+            <span class="checkmark"></span>
+          </label>
 
-          <div class="task-info">
+          <div class="task-details">
             <span class="task-text">{{ task.text }}</span>
-
-            <small v-if="task.date" class="due-date">
+            <small v-if="task.date" class="due-date" :class="getDateClass(task.date)">
               Due: {{ formatDate(task.date) }}
             </small>
           </div>
         </div>
 
-        <span class="priority-badge" :class="task.priority">
-          {{ task.priority }}
-        </span>
-
-        <button class="delete-btn" @click="deleteTask(task._id)">✖</button>
+        <div class="task-right">
+          <span class="badge" :class="getPriorityClass(task.priority)">
+            {{ task.priority }}
+          </span>
+          <button class="delete-btn" @click="deleteTask(task._id)">×</button>
+        </div>
       </div>
     </div>
 
+    <div v-if="tasks.length === 0" class="empty-msg">
+      No tasks yet. Add one to get started.
+    </div>
   </div>
 </template>
 
@@ -87,7 +98,7 @@ export default {
       newTask: "",
       newTaskDate: "",
       newPriority: "",
-      tasks: [], // Initialize empty, will fill from DB
+      tasks: [],
       chart: null,
     };
   },
@@ -100,33 +111,29 @@ export default {
       if (this.tasks.length === 0) return 0;
       return Math.round((this.completedTasks / this.tasks.length) * 100);
     },
-
-    // SORTING: High → Medium → Low
     sortedTasks() {
       const order = { high: 1, medium: 2, low: 3 };
       return [...this.tasks].sort((a, b) => {
-        const priorityA = a.priority ? a.priority.toLowerCase() : 'medium';
-        const priorityB = b.priority ? b.priority.toLowerCase() : 'medium';
-        return (order[priorityA] || 4) - (order[priorityB] || 4);
+        const pA = a.priority ? a.priority.toLowerCase() : 'medium';
+        const pB = b.priority ? b.priority.toLowerCase() : 'medium';
+        return (order[pA] || 4) - (order[pB] || 4);
       });
     },
   },
 
   methods: {
-    // 1. GET TASKS
     async fetchTasks() {
       try {
         const res = await fetch("/api/tasks");
-        if (!res.ok) throw new Error("Failed to fetch tasks");
-        const data = await res.json();
-        this.tasks = data;
-        this.renderPriorityChart();
+        if (res.ok) {
+          this.tasks = await res.json();
+          this.$nextTick(() => this.renderPriorityChart());
+        }
       } catch (err) {
-        console.error(err);
+        // Silent fail or UI notification
       }
     },
 
-    // 2. CREATE TASK
     async addTask() {
       if (!this.newTask.trim() || !this.newPriority) return;
 
@@ -146,39 +153,31 @@ export default {
 
         if (res.ok) {
           const createdTask = await res.json();
-          this.tasks.push(createdTask); // Add to local list
-
-          // Reset form
+          this.tasks.push(createdTask);
           this.newTask = "";
           this.newTaskDate = "";
           this.newPriority = "";
           this.renderPriorityChart();
         }
       } catch (err) {
-        console.error("Error adding task:", err);
+        // Handle error
       }
     },
 
-    // 3. DELETE TASK
     async deleteTask(id) {
-      if (!confirm("Are you sure you want to delete this task?")) return;
+      if (!confirm("Delete this task?")) return;
 
       try {
-        const res = await fetch(`/api/tasks/${id}`, {
-          method: "DELETE",
-        });
-
+        const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
         if (res.ok) {
-          // Remove locally using filter
-          this.tasks = this.tasks.filter(t => t._id !== id);
+          this.tasks = this.tasks.filter((t) => t._id !== id);
           this.renderPriorityChart();
         }
       } catch (err) {
-        console.error("Error deleting task:", err);
+        // Handle error
       }
     },
 
-    // 4. UPDATE STATUS (Check/Uncheck)
     async toggleTaskStatus(task) {
       try {
         await fetch(`/api/tasks/${task._id}`, {
@@ -186,38 +185,35 @@ export default {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ done: task.done }),
         });
-        // We don't need to do anything else as v-model already updated the UI
       } catch (err) {
-        console.error("Error updating task:", err);
-        // Revert UI if API fails
         task.done = !task.done;
       }
     },
 
     formatDate(date) {
       if (!date) return "";
-      const d = new Date(date);
-      return d.toLocaleDateString("en-GB", {
-        day: "2-digit",
+      return new Date(date).toLocaleDateString("en-GB", {
+        day: "numeric",
         month: "short",
-        year: "numeric",
       });
     },
 
-    taskClasses(task) {
-      if (task.done) return "completed";
-
+    getDateClass(date) {
       const today = new Date().toISOString().split("T")[0];
-
-      if (task.date) {
-        if (task.date < today) return "overdue";
-        if (task.date === today) return "due-today";
-      }
-
-      return "";
+      if (date < today) return "text-red";
+      if (date === today) return "text-orange";
+      return "text-gray";
     },
 
-    // PIE CHART RENDER
+    getPriorityClass(priority) {
+      const map = {
+        high: "bg-red",
+        medium: "bg-orange",
+        low: "bg-green",
+      };
+      return map[priority?.toLowerCase()] || "bg-gray";
+    },
+
     renderPriorityChart() {
       if (this.chart) {
         this.chart.destroy();
@@ -227,49 +223,36 @@ export default {
       if (this.tasks.length === 0) return;
 
       const counts = { high: 0, medium: 0, low: 0 };
-
-      this.tasks.forEach(task => {
-        // Safe check for lowercase to match your select values
-        const p = task.priority ? task.priority.toLowerCase() : 'medium';
+      this.tasks.forEach((t) => {
+        const p = t.priority ? t.priority.toLowerCase() : 'medium';
         if (counts[p] !== undefined) counts[p]++;
-        else counts['medium']++; // Fallback
+        else counts['medium']++;
       });
 
-      // Wait for next DOM update ensuring canvas exists
-      this.$nextTick(() => {
-        const canvas = document.getElementById("priorityChart");
-        if (!canvas) return;
+      const canvas = document.getElementById("priorityChart");
+      if (!canvas) return;
 
-        const ctx = canvas.getContext("2d");
-        this.chart = new Chart(ctx, {
-          type: "pie",
-          data: {
-            labels: ["High", "Medium", "Low"],
-            datasets: [
-              {
-                data: [counts.high, counts.medium, counts.low],
-                backgroundColor: ["#ef4444", "#f59e0b", "#10b981"],
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: "bottom" },
+      this.chart = new Chart(canvas, {
+        type: "doughnut",
+        data: {
+          labels: ["High", "Medium", "Low"],
+          datasets: [
+            {
+              data: [counts.high, counts.medium, counts.low],
+              backgroundColor: ["#ef4444", "#f97316", "#10b981"],
+              borderWidth: 0,
             },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "right", labels: { boxWidth: 12, font: { size: 11 } } },
           },
-        });
+        },
       });
     },
-  },
-
-  watch: {
-    // Removed deep watcher to prevent auto-saving every keystroke to DB.
-    // Instead we save specifically on actions (add, delete, toggle).
-    tasks() {
-      // Re-render chart if tasks array changes length roughly
-      // But we call renderPriorityChart manually in CRUD methods usually
-    }
   },
 
   mounted() {
@@ -278,80 +261,125 @@ export default {
 };
 </script>
 
-<style>
-/* ... (Your existing styles remain exactly the same) ... */
-.tasks-page {
-  max-width: 750px;
+<style scoped>
+.container {
+  max-width: 800px;
   margin: 0 auto;
-}
-
-/* Heading */
-.heading {
-  font-size: 32px;
-  margin-bottom: 20px;
+  padding: 40px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #1e293b;
 }
 
-/* Progress Section */
-.progress-container {
-  margin-bottom: 25px;
+.page-title {
+  text-align: center;
+  color: #1e3a8a;
+  margin-bottom: 30px;
+  font-weight: 700;
 }
 
-.progress-container p {
-  margin-bottom: 10px;
-  font-size: 16px;
+/* Stats Area */
+.stats-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 30px;
+  gap: 20px;
+}
+
+.progress-section {
+  flex: 1;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #334155;
 }
 
-.progress-bar {
+.progress-track {
   width: 100%;
-  height: 14px;
-  background: #e2e8f0;
-  border-radius: 10px;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: #6366f1;
+  background: #2563eb;
   transition: width 0.3s ease;
 }
 
-/* Pie chart container */
-.priority-chart-box {
-  max-width: 300px;
-  margin: 25px auto;
+.chart-box {
+  width: 180px;
+  height: 90px;
+  position: relative;
 }
 
-/* Input section */
-.task-input {
+/* Input Form */
+.create-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.input-wrapper {
+  background: white;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+}
+
+.task-input-field {
+  width: 100%;
+  border: none;
+  font-size: 1.1rem;
+  padding: 8px 0;
+  margin-bottom: 15px;
+  outline: none;
+  color: #1e3a8a;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.form-actions {
   display: flex;
   gap: 10px;
-  margin-bottom: 25px;
 }
 
-.task-input input[type="text"] {
-  flex: 1;
-  padding: 12px 15px;
-  border-radius: 8px;
+.date-picker, .priority-select {
+  padding: 8px 12px;
   border: 1px solid #cbd5e1;
-  font-size: 16px;
-}
-
-.date-picker {
-  padding: 12px 10px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-}
-
-.priority-select {
-  padding: 12px 10px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #475569;
   background: white;
 }
 
-/* Task list */
+.btn-primary {
+  margin-left: auto;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+/* Task List */
 .task-list {
   display: flex;
   flex-direction: column;
@@ -359,13 +387,18 @@ export default {
 }
 
 .task-card {
-  background: white;
-  padding: 15px 18px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: white;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.2s;
+}
+
+.task-card:hover {
+  border-color: #93c5fd;
 }
 
 .task-card.completed .task-text {
@@ -373,66 +406,75 @@ export default {
   color: #94a3b8;
 }
 
-/* Highlight overdue tasks */
-.task-card.overdue {
-  border-color: #ef4444;
-  background: #fee2e2;
-}
-
-/* Highlight today's tasks */
-.task-card.due-today {
-  border-color: #facc15;
-  background: #fef9c3;
-}
-
-.left {
+.task-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
+  flex: 1;
 }
 
-.task-info {
+.checkbox-wrapper input {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.task-details {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+}
+
+.task-text {
+  font-size: 1rem;
+  color: #0f172a;
 }
 
 .due-date {
-  font-size: 12px;
-  color: #475569;
+  font-size: 0.75rem;
+  margin-top: 2px;
 }
 
-/* Delete button */
-.delete-btn {
-  background: #ef4444;
-  border: none;
-  color: white;
-  font-size: 16px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+.text-red { color: #ef4444; font-weight: 600; }
+.text-orange { color: #f97316; font-weight: 600; }
+.text-gray { color: #94a3b8; }
+
+.task-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.delete-btn:hover {
-  background: #dc2626;
-}
-
-/* PRIORITY BADGES */
-.priority-badge {
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
   color: white;
 }
 
-.priority-badge.high {
-  background: #ef4444;
+.bg-red { background: #ef4444; }
+.bg-orange { background: #f97316; }
+.bg-green { background: #10b981; }
+.bg-gray { background: #cbd5e1; }
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
 }
-.priority-badge.medium {
-  background: #f59e0b;
+
+.delete-btn:hover {
+  color: #ef4444;
 }
-.priority-badge.low {
-  background: #10b981;
+
+.empty-msg {
+  text-align: center;
+  color: #64748b;
+  margin-top: 40px;
 }
 </style>

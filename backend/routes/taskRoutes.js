@@ -1,4 +1,3 @@
-// backend/routes/taskRoutes.js
 const express = require("express");
 const Task = require("../models/Task");
 
@@ -10,7 +9,6 @@ router.get("/", async (req, res) => {
     const tasks = await Task.find();
     res.json(tasks);
   } catch (err) {
-    console.error("Error getting tasks:", err);
     res.status(500).json({ message: "Error getting tasks" });
   }
 });
@@ -21,7 +19,6 @@ router.post("/", async (req, res) => {
     const task = await Task.create(req.body);
     res.status(201).json(task);
   } catch (err) {
-    console.error("Error creating task:", err);
     res.status(500).json({ message: "Error creating task" });
   }
 });
@@ -36,7 +33,6 @@ router.put("/:id", async (req, res) => {
     );
     res.json(updated);
   } catch (err) {
-    console.error("Error updating task:", err);
     res.status(500).json({ message: "Error updating task" });
   }
 });
@@ -47,7 +43,6 @@ router.delete("/:id", async (req, res) => {
     await Task.findByIdAndDelete(req.params.id);
     res.json({ message: "Task deleted" });
   } catch (err) {
-    console.error("Error deleting task:", err);
     res.status(500).json({ message: "Error deleting task" });
   }
 });
