@@ -1,13 +1,13 @@
 <template>
-  <div class="layout">
-    <!-- FULL-WIDTH NAVBAR AT THE TOP -->
+  <div v-if="isAuthPage" class="auth-layout">
+    <router-view />
+  </div>
+
+  <div v-else class="layout">
     <Navbar class="top-nav" />
 
     <div class="main-wrapper">
-      <!-- LEFT SIDEBAR -->
       <Sidebar />
-
-      <!-- MAIN CONTENT -->
       <main class="page-area">
         <router-view />
       </main>
@@ -16,44 +16,58 @@
 </template>
 
 <script setup>
-import Sidebar from './components/Sidebar.vue'
-import Navbar from './components/Navbar.vue'
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import Sidebar from './components/Sidebar.vue';
+import Navbar from './components/Navbar.vue';
+
+const route = useRoute();
+
+// Check if current page is Login or Signup
+const isAuthPage = computed(() => {
+  return ['/login', '/signup'].includes(route.path);
+});
 </script>
 
 <style>
-/* FULL PAGE CONTAINER */
+/* Main App Layout */
 .layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
-/* NAVBAR FULL WIDTH */
 .top-nav {
   width: 100%;
   border-bottom: 1px solid #e5e7eb;
   background: white;
-  padding: 15px 40px;
+  padding: 0 40px; /* Adjusted padding for better alignment */
+  height: 70px;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-/* SIDEBAR + CONTENT LAYOUT */
 .main-wrapper {
   display: flex;
-  width: 100%;
-  height: 100%;
+  flex: 1; /* Take remaining height */
+  overflow: hidden; /* Prevent double scrollbars */
 }
 
-/* SIDEBAR stays LEFT */
-main-wrapper > Sidebar {
-  flex-shrink: 0;
-}
-
-/* MAIN CONTENT AREA (EXPANDS FULLY) */
 .page-area {
   flex: 1;
   padding: 30px 40px;
+  overflow-y: auto; /* Allow content to scroll */
+  background-color: #f8fafc;
+}
+
+/* Auth Layout */
+.auth-layout {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f1f5f9;
 }
 </style>

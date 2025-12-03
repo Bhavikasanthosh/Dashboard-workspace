@@ -1,67 +1,76 @@
 <template>
-  <div class="container">
-    <h1 class="page-title">My Notes</h1>
+  <div class="app-container">
 
-    <div class="create-section">
-      <div class="input-wrapper">
+    <header class="top-bar">
+      <h1 class="app-title">Notes</h1>
+      <div class="search-wrapper">
+        <span class="icon">🔍</span>
+        <input type="text" placeholder="Search..." class="search-input" />
+      </div>
+    </header>
+
+    <section class="input-area">
+      <div class="note-editor">
         <input
           v-model="title"
-          class="note-title-input"
-          type="text"
           placeholder="Title"
+          class="editor-title"
         />
         <textarea
           v-model="content"
-          class="note-content-input"
           placeholder="Take a note..."
+          class="editor-content"
         ></textarea>
 
-        <div class="form-actions">
-          <select v-model="selectedTag" class="tag-select">
-            <option disabled value="">Select Tag</option>
-            <option value="Work">Work</option>
-            <option value="Personal">Personal</option>
-            <option value="Study">Study</option>
-          </select>
-          <button @click="addNote" class="btn-primary">Add Note</button>
+        <div class="editor-footer">
+          <div class="tags-row">
+            <select v-model="selectedTag" class="tag-pill-selector">
+              <option disabled value="">Tag</option>
+              <option value="Work">💼 Work</option>
+              <option value="Personal">🏠 Personal</option>
+              <option value="Study">📚 Study</option>
+            </select>
+          </div>
+          <button @click="addNote" class="save-btn">Save Note</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="notes-grid">
+    <div class="masonry-wrapper">
       <div
         v-for="note in sortedNotes"
         :key="note._id"
-        class="note-card"
+        class="note-brick"
+        :class="getBrickClass(note.tag)"
       >
-        <div class="card-top">
-          <h3 class="card-title">{{ note.title }}</h3>
+        <div class="brick-header">
+          <h3>{{ note.title }}</h3>
           <button
-            class="pin-icon"
+            class="pin-toggle"
             :class="{ pinned: note.pinned }"
             @click="togglePin(note)"
           >
-            <span v-if="note.pinned">★</span>
-            <span v-else>☆</span>
+            📌
           </button>
         </div>
 
-        <p class="card-content">{{ note.content }}</p>
+        <p class="brick-text">{{ note.content }}</p>
 
-        <div class="card-bottom">
-          <span class="badge" :class="getTagClass(note.tag)">
-            {{ note.tag || 'General' }}
-          </span>
-          <span class="date">{{ formatDate(note.date) }}</span>
+        <div class="brick-footer">
+          <span class="brick-tag">{{ note.tag || 'General' }}</span>
+          <span class="brick-date">{{ formatDate(note.date) }}</span>
         </div>
 
-        <button class="delete-btn" @click="deleteNote(note._id)">Delete</button>
+        <div class="brick-overlay">
+          <button class="delete-icon" @click="deleteNote(note._id)">🗑</button>
+        </div>
       </div>
     </div>
 
-    <div v-if="notes.length === 0" class="empty-msg">
-      No notes found. Create one to get started.
+    <div v-if="notes.length === 0" class="empty-canvas">
+      <p>Your mind is empty. Write something!</p>
     </div>
+
   </div>
 </template>
 
@@ -91,18 +100,16 @@ export default {
       try {
         const res = await fetch("/api/notes");
         if (res.ok) this.notes = await res.json();
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     },
     async addNote() {
-      if (!this.title.trim() || !this.content.trim()) return;
+      if (!this.title.trim() && !this.content.trim()) return;
 
       const payload = {
         title: this.title,
         content: this.content,
         tag: this.selectedTag || "General",
-        pinned: false,
+        pinned: false
       };
 
       try {
@@ -111,57 +118,38 @@ export default {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
         if (res.ok) {
-          const newNote = await res.json();
-          this.notes.unshift(newNote);
+          this.notes.unshift(await res.json());
           this.title = "";
           this.content = "";
           this.selectedTag = "";
         }
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     },
     async deleteNote(id) {
+      if (!confirm("Delete note?")) return;
       try {
         const res = await fetch(`/api/notes/${id}`, { method: "DELETE" });
-        if (res.ok) {
-          this.notes = this.notes.filter(n => n._id !== id);
-        }
-      } catch (err) {
-        console.error(err);
-      }
+        if (res.ok) this.notes = this.notes.filter(n => n._id !== id);
+      } catch (err) { console.error(err); }
     },
     async togglePin(note) {
-      const originalState = note.pinned;
-      note.pinned = !originalState;
-
+      const old = note.pinned;
+      note.pinned = !old;
       try {
         await fetch(`/api/notes/${note._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pinned: note.pinned }),
         });
-      } catch (err) {
-        note.pinned = originalState;
-      }
+      } catch (err) { note.pinned = old; }
     },
-    formatDate(dateStr) {
-      if (!dateStr) return "";
-      return new Date(dateStr).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-      });
+    formatDate(d) {
+      if (!d) return "";
+      return new Date(d).toLocaleDateString("en-GB", { month: "short", day: "numeric" });
     },
-    getTagClass(tag) {
-      if (!tag) return "bg-blue";
-      const map = {
-        Work: "bg-dark-blue",
-        Personal: "bg-ocean",
-        Study: "bg-sky",
-      };
-      return map[tag] || "bg-blue";
+    getBrickClass(tag) {
+      return `border-${(tag || 'general').toLowerCase()}`;
     }
   },
   mounted() {
@@ -171,195 +159,229 @@ export default {
 </script>
 
 <style scoped>
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #1e293b;
+/* Main Full-Screen Layout */
+.app-container {
+  min-height: 100vh;
+  background-color: #f3f4f6; /* Soft gray */
+  padding: 20px 40px;
+  font-family: 'Segoe UI', sans-serif;
 }
 
-.page-title {
-  text-align: center;
-  color: #1e3a8a; /* Dark Blue */
+/* Header */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 40px;
-  font-weight: 700;
 }
 
-/* Form Styles */
-.create-section {
+.app-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.search-wrapper {
+  background: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  width: 300px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.search-input {
+  border: none;
+  outline: none;
+  margin-left: 8px;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+/* Input Section */
+.input-area {
   display: flex;
   justify-content: center;
   margin-bottom: 50px;
 }
 
-.input-wrapper {
-  background: #ffffff;
-  border: 1px solid #bfdbfe; /* Light Blue Border */
-  border-radius: 8px;
+.note-editor {
+  background: white;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
   padding: 20px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+  transition: box-shadow 0.2s;
 }
 
-.note-title-input {
+.note-editor:focus-within {
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+
+.editor-title {
   width: 100%;
   border: none;
+  outline: none;
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 10px;
-  outline: none;
-  color: #1e3a8a;
+  color: #111827;
 }
 
-.note-content-input {
+.editor-content {
   width: 100%;
   border: none;
-  resize: none;
-  font-size: 0.95rem;
-  min-height: 60px;
   outline: none;
-  color: #334155;
+  resize: none;
+  font-size: 1rem;
+  color: #374151;
+  min-height: 50px;
   font-family: inherit;
 }
 
-.form-actions {
+.editor-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 15px;
   padding-top: 15px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #e5e7eb;
 }
 
-.tag-select {
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  padding: 5px 10px;
-  font-size: 0.85rem;
-  color: #475569;
-  background: white;
-}
-
-.btn-primary {
-  background-color: #2563eb; /* Royal Blue */
-  color: white;
+.tag-pill-selector {
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
+  background: #f3f4f6;
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: #4b5563;
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
-.btn-primary:hover {
-  background-color: #1d4ed8;
+.save-btn {
+  background: #2563eb; /* Royal Blue */
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.save-btn:hover { background: #1d4ed8; }
+
+/* MASONRY LAYOUT - THE MAGIC PART */
+.masonry-wrapper {
+  column-count: 1; /* Mobile default */
+  column-gap: 20px;
 }
 
-/* Grid Styles */
-.notes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
+/* Responsive Columns */
+@media (min-width: 640px) { .masonry-wrapper { column-count: 2; } }
+@media (min-width: 1024px) { .masonry-wrapper { column-count: 3; } }
+@media (min-width: 1400px) { .masonry-wrapper { column-count: 4; } }
 
-.note-card {
+.note-brick {
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 20px; /* Space between items vertically */
+  break-inside: avoid; /* Prevents card from splitting across columns */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid transparent;
+  display: inline-block; /* Essential for masonry spacing */
+  width: 100%;
 }
 
-.note-card:hover {
-  border-color: #93c5fd;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+.note-brick:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  z-index: 10;
 }
 
-.card-top {
+/* Color Coding Borders */
+.border-work { border-top: 4px solid #3b82f6; }
+.border-personal { border-top: 4px solid #8b5cf6; }
+.border-study { border-top: 4px solid #10b981; }
+.border-general { border-top: 4px solid #9ca3af; }
+
+.brick-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 10px;
 }
 
-.card-title {
+.brick-header h3 {
   font-size: 1.1rem;
-  font-weight: 600;
   margin: 0;
-  color: #0f172a;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.4;
 }
 
-.pin-icon {
+.pin-toggle {
   background: none;
   border: none;
-  font-size: 1.2rem;
   cursor: pointer;
-  color: #cbd5e1;
-  padding: 0;
+  color: #d1d5db;
+  font-size: 1.2rem;
+  transition: color 0.2s;
 }
+.pin-toggle.pinned, .pin-toggle:hover { color: #2563eb; }
 
-.pin-icon.pinned {
-  color: #2563eb; /* Blue star */
-}
-
-.card-content {
+.brick-text {
   font-size: 0.95rem;
-  color: #475569;
-  line-height: 1.5;
-  margin-bottom: 20px;
-  flex-grow: 1;
+  color: #4b5563;
+  line-height: 1.6;
   white-space: pre-wrap;
+  margin-bottom: 20px;
 }
 
-.card-bottom {
+.brick-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: auto;
-}
-
-.date {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.delete-btn {
-  margin-top: 15px;
-  background: none;
-  border: 1px solid #ef4444;
-  color: #ef4444;
-  padding: 6px;
-  border-radius: 4px;
   font-size: 0.8rem;
-  cursor: pointer;
-  width: 100%;
-  text-align: center;
 }
 
-.delete-btn:hover {
-  background: #fef2f2;
-}
-
-.empty-msg {
-  text-align: center;
-  color: #64748b;
-  margin-top: 40px;
-}
-
-/* Badges */
-.badge {
-  padding: 2px 8px;
+.brick-tag {
+  background: #f3f4f6;
+  padding: 4px 10px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  color: #6b7280;
   font-weight: 600;
   text-transform: uppercase;
 }
 
-.bg-blue { background: #e0f2fe; color: #0369a1; }
-.bg-dark-blue { background: #dbeafe; color: #1e40af; } /* Work */
-.bg-ocean { background: #cffafe; color: #155e75; } /* Personal */
-.bg-sky { background: #e0e7ff; color: #3730a3; } /* Study */
+.brick-date { color: #9ca3af; }
+
+.brick-overlay {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.note-brick:hover .brick-overlay { opacity: 1; }
+
+.delete-icon {
+  background: white;
+  border: 1px solid #fee2e2;
+  color: #ef4444;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.delete-icon:hover { background: #fecaca; }
+
+.empty-canvas { text-align: center; color: #9ca3af; margin-top: 60px; font-size: 1.2rem; }
 </style>
