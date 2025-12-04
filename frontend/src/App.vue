@@ -1,15 +1,23 @@
 <template>
   <div v-if="isAuthPage" class="auth-layout">
+    <div class="auth-background-shape"></div>
     <router-view />
   </div>
 
-  <div v-else class="layout">
-    <Navbar class="top-nav" />
+  <div v-else class="dashboard-layout">
+    <Sidebar class="app-sidebar" />
 
-    <div class="main-wrapper">
-      <Sidebar />
-      <main class="page-area">
-        <router-view />
+    <div class="main-content">
+      <Navbar class="app-header" />
+
+      <main class="page-view">
+        <div class="container">
+          <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </div>
       </main>
     </div>
   </div>
@@ -22,52 +30,83 @@ import Sidebar from './components/Sidebar.vue';
 import Navbar from './components/Navbar.vue';
 
 const route = useRoute();
-
-// Check if current page is Login or Signup
-const isAuthPage = computed(() => {
-  return ['/login', '/signup'].includes(route.path);
-});
+const isAuthPage = computed(() => ['/login', '/signup'].includes(route.path));
 </script>
 
-<style>
-/* Main App Layout */
-.layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.top-nav {
-  width: 100%;
-  border-bottom: 1px solid #e5e7eb;
-  background: white;
-  padding: 0 40px; /* Adjusted padding for better alignment */
-  height: 70px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.main-wrapper {
-  display: flex;
-  flex: 1; /* Take remaining height */
-  overflow: hidden; /* Prevent double scrollbars */
-}
-
-.page-area {
-  flex: 1;
-  padding: 30px 40px;
-  overflow-y: auto; /* Allow content to scroll */
-  background-color: #f8fafc;
-}
-
-/* Auth Layout */
+<style scoped>
+/* --- Auth Layout --- */
 .auth-layout {
   height: 100vh;
   width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Aesthetic background blob for login */
+.auth-background-shape {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* --- Dashboard Layout --- */
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+  z-index: 20;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevents flex overflow issues */
+}
+
+.app-header {
+  height: var(--header-height);
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px); /* Glass effect */
+  z-index: 10;
+}
+
+.page-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background: var(--bg-body);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Page Transition Animation */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

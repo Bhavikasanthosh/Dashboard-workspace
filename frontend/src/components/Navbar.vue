@@ -1,21 +1,28 @@
 <template>
-  <div class="navbar">
-    <h1 class="logo">Digital Workspace</h1>
+  <header class="navbar">
+    <div class="nav-content">
+      <h2 class="current-page">{{ currentPageTitle }}</h2>
 
-    <div class="nav-right">
-      <button @click="logout" class="logout-btn">Logout</button>
+      <div class="nav-actions">
+        <button class="icon-btn">🔔</button>
+        <button class="logout-btn" @click="logout">Sign Out</button>
+      </div>
     </div>
-  </div>
+  </header>
 </template>
 
 <script>
 export default {
-  name: 'Navbar',
+  computed: {
+    currentPageTitle() {
+      // Simple logic to capitalize current path name
+      const path = this.$route.path.replace('/', '') || 'Dashboard';
+      return path.charAt(0).toUpperCase() + path.slice(1).replace('-', ' ');
+    }
+  },
   methods: {
     logout() {
-      // 1. Remove token
       localStorage.removeItem("token");
-      // 2. Redirect to Login
       this.$router.push("/login");
     }
   }
@@ -24,34 +31,60 @@ export default {
 
 <style scoped>
 .navbar {
-  width: 100%;
-  height: 70px;
-  background: white;
+  padding: 0 2rem;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Pushes content to edges */
-  padding: 0 40px; /* Use padding instead of padding-left */
-  border-bottom: 1px solid #e5e7eb;
 }
 
-.logo {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1e293b;
+.nav-content {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.current-page {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+.icon-btn:hover {
+  background: #f3f4f6;
 }
 
 .logout-btn {
-  background-color: #fee2e2;
-  color: #ef4444;
-  border: 1px solid #fecaca;
   padding: 8px 16px;
+  background-color: white;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  background-color: #fecaca;
+  border-color: #fecaca;
+  color: #ef4444;
+  background-color: #fef2f2;
 }
 </style>
