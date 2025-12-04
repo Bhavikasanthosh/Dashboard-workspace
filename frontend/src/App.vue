@@ -1,23 +1,16 @@
 <template>
   <div v-if="isAuthPage" class="auth-layout">
-    <div class="auth-background-shape"></div>
     <router-view />
   </div>
 
   <div v-else class="dashboard-layout">
-    <Sidebar class="app-sidebar" />
+    <Navbar class="top-nav" />
 
-    <div class="main-content">
-      <Navbar class="app-header" />
+    <div class="main-wrapper">
+      <Sidebar />
 
-      <main class="page-view">
-        <div class="container">
-          <router-view v-slot="{ Component }">
-            <transition name="fade" mode="out-in">
-              <component :is="Component" />
-            </transition>
-          </router-view>
-        </div>
+      <main class="page-area">
+        <router-view />
       </main>
     </div>
   </div>
@@ -30,83 +23,66 @@ import Sidebar from './components/Sidebar.vue';
 import Navbar from './components/Navbar.vue';
 
 const route = useRoute();
-const isAuthPage = computed(() => ['/login', '/signup'].includes(route.path));
+
+// Check if the current page is Login or Signup
+const isAuthPage = computed(() => {
+  return ['/login', '/signup'].includes(route.path);
+});
 </script>
 
-<style scoped>
-/* --- Auth Layout --- */
+<style>
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f8fafc;
+}
+
+/* --- AUTH LAYOUT --- */
 .auth-layout {
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f8fafc;
-  position: relative;
-  overflow: hidden;
+  background-color: #f1f5f9;
 }
 
-/* Aesthetic background blob for login */
-.auth-background-shape {
-  position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* --- Dashboard Layout --- */
+/* --- DASHBOARD LAYOUT --- */
 .dashboard-layout {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.app-sidebar {
-  width: var(--sidebar-width);
-  flex-shrink: 0;
-  border-right: 1px solid var(--border-color);
-  background: var(--bg-card);
-  z-index: 20;
-}
-
-.main-content {
-  flex: 1;
-  display: flex;
   flex-direction: column;
-  min-width: 0; /* Prevents flex overflow issues */
+  height: 100vh;
 }
 
-.app-header {
-  height: var(--header-height);
-  border-bottom: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px); /* Glass effect */
-  z-index: 10;
+/* Navbar Logic */
+.top-nav {
+  width: 100%;
+  height: 64px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  z-index: 50;
 }
 
-.page-view {
+/* Wrapper for Sidebar + Content */
+.main-wrapper {
+  display: flex;
+  flex: 1; /* Takes remaining height */
+  overflow: hidden; /* Prevents double scrollbars */
+}
+
+/* Page Content */
+.page-area {
   flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-  background: var(--bg-body);
-}
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* Page Transition Animation */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+  overflow-y: auto; /* Scroll only inside content area */
+  padding: 30px;
+  background-color: #f8fafc;
 }
 </style>

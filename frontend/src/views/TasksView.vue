@@ -78,7 +78,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { Chart } from "chart.js/auto";
 
@@ -150,13 +149,19 @@ export default {
       } catch (err) {}
     },
     async toggleTaskStatus(task) {
+      // 1. UPDATE CHART IMMEDIATELY ON CLICK
+      this.renderChart();
+
       try {
         await fetch(`/api/tasks/${task._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ done: task.done }),
         });
-      } catch (err) { task.done = !task.done; }
+      } catch (err) {
+        task.done = !task.done;
+        this.renderChart(); // Revert chart if API fails
+      }
     },
     formatDate(d) {
       if (!d) return "";
@@ -170,10 +175,17 @@ export default {
     },
     renderChart() {
       if (this.chart) { this.chart.destroy(); this.chart = null; }
-      if (this.tasks.length === 0) return;
+
+      // 2. FILTER: Only count tasks that are NOT done
+      const activeTasks = this.tasks.filter(t => !t.done);
+
+      // If no active tasks, we don't render or render empty
+      if (activeTasks.length === 0) return;
 
       const counts = { high: 0, medium: 0, low: 0 };
-      this.tasks.forEach(t => {
+
+      // Loop through ACTIVE tasks only
+      activeTasks.forEach(t => {
         const p = t.priority ? t.priority.toLowerCase() : 'medium';
         if (counts[p] !== undefined) counts[p]++; else counts['medium']++;
       });
