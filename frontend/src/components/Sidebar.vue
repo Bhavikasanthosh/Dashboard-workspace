@@ -1,8 +1,6 @@
 <template>
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo-shape">✨</div>
-      <span class="brand-name">Orbit</span>
     </div>
 
     <nav class="menu">
@@ -106,7 +104,7 @@
   transform: translateX(3px);
 }
 
-/* --- CHANGED HERE: Active State (The Purple Fix) --- */
+
 .nav-link.active {
   background: #eef2ff; /* Light Purple Background */
   color: #4f46e5;      /* Dark Purple Text (Visible!) */
