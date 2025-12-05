@@ -3,74 +3,103 @@
     <div class="content-container">
 
       <div class="dashboard-head">
-        <h1 class="head-title">Tasks</h1>
+        <div>
+          <h1 class="head-title">My Tasks</h1>
+          <p class="head-subtitle">Focus on what matters today.</p>
+        </div>
+
         <div class="stats-pill" v-if="tasks.length > 0">
           <div class="pill-track">
             <div class="pill-fill" :style="{ width: progressPercent + '%' }"></div>
           </div>
-          <span>{{ completedTasks }}/{{ tasks.length }} Done</span>
+          <span class="pill-text">{{ completedTasks }} / {{ tasks.length }} Done</span>
         </div>
       </div>
 
       <div class="dashboard-grid">
 
         <aside class="side-panel">
-
           <div class="panel-card create-card">
-            <h3>New Task</h3>
-            <input
-              v-model="newTask"
-              class="side-input"
-              placeholder="What to do?"
-              @keyup.enter="addTask"
-            />
-            <div class="side-options">
-              <input v-model="newTaskDate" type="date" class="date-mini" />
-              <select v-model="newPriority" class="prio-mini">
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <button @click="addTask" class="side-add-btn">Add Task</button>
-          </div>
+            <h3 class="card-title">New Entry</h3>
 
-          <div class="panel-card chart-card" v-if="tasks.length > 0">
-            <canvas id="priorityChart"></canvas>
-          </div>
-
-        </aside>
-
-        <main class="main-list-area">
-          <div
-            v-for="task in sortedTasks"
-            :key="task._id"
-            class="task-strip"
-            :class="{ 'is-done': task.done }"
-          >
-            <div class="strip-left">
+            <div class="input-group">
               <input
-                type="checkbox"
-                v-model="task.done"
-                class="round-check"
-                @change="toggleTaskStatus(task)"
+                v-model="newTask"
+                class="modern-input"
+                placeholder="Write a task..."
+                @keyup.enter="addTask"
               />
-              <div class="strip-info">
-                <span class="strip-text">{{ task.text }}</span>
-                <span v-if="task.date" class="strip-date" :class="getDateClass(task.date)">
-                  {{ formatDate(task.date) }}
-                </span>
+            </div>
+
+            <div class="options-row">
+              <div class="input-wrapper">
+                <label>Date</label>
+                <input v-model="newTaskDate" type="date" class="modern-select" />
+              </div>
+              <div class="input-wrapper">
+                <label>Priority</label>
+                <select v-model="newPriority" class="modern-select">
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
               </div>
             </div>
 
-            <div class="strip-right">
-              <span class="prio-dot" :class="task.priority"></span>
-              <button class="del-btn" @click="deleteTask(task._id)">×</button>
-            </div>
+            <button @click="addTask" class="primary-btn">
+              <span>Add to List</span>
+            </button>
           </div>
 
+          <div class="panel-card chart-card" v-if="tasks.length > 0">
+            <h3 class="card-title center-text">Status</h3>
+            <div class="chart-container">
+              <canvas id="priorityChart"></canvas>
+            </div>
+          </div>
+        </aside>
+
+        <main class="main-list-area">
+          <transition-group name="list" tag="div">
+            <div
+              v-for="task in sortedTasks"
+              :key="task._id"
+              class="task-strip"
+              :class="{ 'is-done': task.done }"
+            >
+              <div class="strip-left">
+                <label class="custom-checkbox">
+                  <input
+                    type="checkbox"
+                    v-model="task.done"
+                    @change="toggleTaskStatus(task)"
+                  />
+                  <span class="checkmark"></span>
+                </label>
+
+                <div class="strip-info">
+                  <span class="strip-text">{{ task.text }}</span>
+                  <div class="strip-meta">
+                    <span v-if="task.date" class="meta-tag date-tag">
+                      {{ formatDate(task.date) }}
+                    </span>
+                    <span class="meta-tag prio-tag" :class="task.priority">
+                      {{ task.priority }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button class="icon-btn delete-btn" @click="deleteTask(task._id)">
+                <Trash2 size="18" />
+              </button>
+            </div>
+          </transition-group>
+
           <div v-if="tasks.length === 0" class="zero-state">
-            No tasks. Relax or add a new one!
+            <Coffee size="48" class="text-brown-light mb-4" />
+            <h3>It's quiet here.</h3>
+            <p>Time for a coffee break?</p>
           </div>
         </main>
 
@@ -78,11 +107,14 @@
     </div>
   </div>
 </template>
+
 <script>
 import { Chart } from "chart.js/auto";
+import { Trash2, Coffee } from 'lucide-vue-next';
 
 export default {
   name: "TasksView",
+  components: { Trash2, Coffee },
   data() {
     return {
       newTask: "",
@@ -101,6 +133,7 @@ export default {
     sortedTasks() {
       const order = { high: 1, medium: 2, low: 3 };
       return [...this.tasks].sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
         const pA = a.priority ? a.priority.toLowerCase() : 'medium';
         const pB = b.priority ? b.priority.toLowerCase() : 'medium';
         return (order[pA] || 4) - (order[pB] || 4);
@@ -139,7 +172,7 @@ export default {
       } catch (err) {}
     },
     async deleteTask(id) {
-      if (!confirm("Delete?")) return;
+      if (!confirm("Delete this task?")) return;
       try {
         const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
         if (res.ok) {
@@ -149,42 +182,25 @@ export default {
       } catch (err) {}
     },
     async toggleTaskStatus(task) {
-      // 1. UPDATE CHART IMMEDIATELY ON CLICK
       this.renderChart();
-
       try {
         await fetch(`/api/tasks/${task._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ done: task.done }),
         });
-      } catch (err) {
-        task.done = !task.done;
-        this.renderChart(); // Revert chart if API fails
-      }
+      } catch (err) { task.done = !task.done; this.renderChart(); }
     },
     formatDate(d) {
       if (!d) return "";
       return new Date(d).toLocaleDateString("en-GB", { month: "short", day: "numeric" });
     },
-    getDateClass(d) {
-      const today = new Date().toISOString().split("T")[0];
-      if (d < today) return "text-red";
-      if (d === today) return "text-orange";
-      return "";
-    },
     renderChart() {
       if (this.chart) { this.chart.destroy(); this.chart = null; }
-
-      // 2. FILTER: Only count tasks that are NOT done
       const activeTasks = this.tasks.filter(t => !t.done);
-
-      // If no active tasks, we don't render or render empty
       if (activeTasks.length === 0) return;
 
       const counts = { high: 0, medium: 0, low: 0 };
-
-      // Loop through ACTIVE tasks only
       activeTasks.forEach(t => {
         const p = t.priority ? t.priority.toLowerCase() : 'medium';
         if (counts[p] !== undefined) counts[p]++; else counts['medium']++;
@@ -198,16 +214,18 @@ export default {
         data: {
           labels: ["High", "Medium", "Low"],
           datasets: [{
+            // CHART COLORS: Muted Earth Tones
             data: [counts.high, counts.medium, counts.low],
-            backgroundColor: ["#ef4444", "#f97316", "#10b981"],
+            backgroundColor: ["#D84315", "#FB8C00", "#6D4C41"],
             borderWidth: 0,
+            hoverOffset: 4
           }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
-          cutout: '70%',
+          cutout: '75%',
         },
       });
     },
@@ -217,149 +235,125 @@ export default {
 </script>
 
 <style scoped>
+/* BACKGROUND */
 .task-dashboard {
   min-height: 100vh;
-  background-color: #f8fafc;
-  padding: 30px;
+  background-color: #faf9f6; /* Off-white Paper color */
+  padding: 40px;
   font-family: 'Segoe UI', sans-serif;
+  color: #3e2723;
 }
 
-.content-container {
-  max-width: 1600px; /* Fluid but capped for super-wide screens */
-  margin: 0 auto;
-  width: 100%;
-}
+.content-container { max-width: 1200px; margin: 0 auto; }
 
-/* Header */
-.dashboard-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-.head-title { font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0; }
+/* HEADERS */
+.dashboard-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+.head-title { font-size: 2.5rem; font-weight: 800; color: #3e2723; margin: 0; }
+.head-subtitle { color: #8d6e63; margin-top: 5px; font-size: 1.1rem; }
 
+/* PILL */
 .stats-pill {
   background: white;
-  padding: 8px 16px;
-  border-radius: 99px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  font-weight: 600;
-  color: #334155;
+  padding: 10px 20px;
+  border-radius: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: 0 4px 10px -2px rgba(62, 39, 35, 0.05);
+  border: 1px solid #efebe9;
 }
-.pill-track {
-  width: 100px;
-  height: 6px;
-  background: #e2e8f0;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.pill-fill { height: 100%; background: #2563eb; transition: width 0.3s; }
+.pill-track { width: 140px; height: 8px; background: #efebe9; border-radius: 4px; overflow: hidden; }
+/* Brown Gradient Fill */
+.pill-fill { height: 100%; background: linear-gradient(90deg, #8d6e63, #5d4037); transition: width 0.5s ease; }
+.pill-text { font-size: 0.85rem; font-weight: 700; color: #5d4037; }
 
-/* Main Grid Layout */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr; /* Fixed Sidebar + Fluid Main */
-  gap: 30px;
-}
+/* GRID */
+.dashboard-grid { display: grid; grid-template-columns: 350px 1fr; gap: 40px; align-items: start; }
+@media (max-width: 1000px) { .dashboard-grid { grid-template-columns: 1fr; } }
 
-@media (max-width: 900px) {
-  .dashboard-grid { grid-template-columns: 1fr; } /* Stack on mobile */
-}
-
-/* Side Panel */
-.side-panel { display: flex; flex-direction: column; gap: 20px; }
-
+/* CARDS */
 .panel-card {
-  background: white;
-  padding: 20px;
+  background: white; padding: 24px; border-radius: 20px;
+  box-shadow: 0 10px 20px -5px rgba(62, 39, 35, 0.05);
+  border: 1px solid #efebe9;
+}
+.card-title { font-size: 1.1rem; font-weight: 700; color: #3e2723; margin-bottom: 20px; }
+.center-text { text-align: center; }
+
+/* INPUTS */
+.create-card { display: flex; flex-direction: column; gap: 16px; }
+.modern-input, .modern-select {
+  width: 100%; padding: 12px 16px;
+  background: #fdfbf7; /* Very light cream */
+  border: 1px solid #d7ccc8;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #f1f5f9;
+  font-size: 0.95rem; color: #3e2723;
+  transition: all 0.2s;
 }
-.panel-card h3 { margin: 0 0 15px 0; font-size: 1.1rem; color: #1e293b; }
-
-.side-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  outline: none;
-}
-.side-options { display: flex; gap: 10px; margin-bottom: 15px; }
-.date-mini, .prio-mini {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-.side-add-btn {
-  width: 100%;
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.side-add-btn:hover { background: #1d4ed8; }
-
-.chart-card { height: 200px; display: flex; justify-content: center; }
-
-/* Task List */
-.main-list-area {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.modern-input:focus, .modern-select:focus {
+  background: white; border-color: #8d6e63; outline: none;
+  box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1);
 }
 
+.options-row { display: flex; gap: 12px; }
+.input-wrapper { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.input-wrapper label { font-size: 0.75rem; font-weight: 700; color: #8d6e63; }
+
+/* BUTTON (Brown) */
+.primary-btn {
+  background: #5d4037; /* Dark Coffee */
+  color: white; border: none; padding: 14px; border-radius: 12px;
+  font-weight: 600; font-size: 1rem; cursor: pointer;
+  transition: transform 0.1s, background 0.2s; margin-top: 10px;
+}
+.primary-btn:hover { background: #4e342e; transform: translateY(-1px); }
+
+/* CHART */
+.chart-container { height: 220px; position: relative; }
+
+/* LIST */
+.main-list-area { display: flex; flex-direction: column; gap: 16px; }
 .task-strip {
-  background: white;
-  padding: 15px 20px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  border: 1px solid #f1f5f9;
-  transition: transform 0.1s;
+  background: white; padding: 16px 24px; border-radius: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 2px 5px rgba(62, 39, 35, 0.03);
+  border: 1px solid #efebe9; transition: all 0.2s ease;
 }
-.task-strip:hover { transform: translateX(2px); border-color: #cbd5e1; }
+.task-strip:hover { transform: translateY(-2px); box-shadow: 0 8px 15px -3px rgba(62, 39, 35, 0.08); }
 
-.strip-left { display: flex; align-items: center; gap: 15px; }
-.round-check { width: 20px; height: 20px; cursor: pointer; accent-color: #2563eb; }
+.strip-left { display: flex; align-items: flex-start; gap: 16px; }
+.strip-info { display: flex; flex-direction: column; gap: 4px; }
+.strip-text { font-size: 1.05rem; font-weight: 600; color: #3e2723; }
 
-.strip-info { display: flex; flex-direction: column; }
-.strip-text { font-size: 1rem; color: #1e293b; font-weight: 500; }
-.strip-date { font-size: 0.8rem; color: #94a3b8; }
-.text-red { color: #ef4444; font-weight: 700; }
-.text-orange { color: #f97316; font-weight: 700; }
+/* CHECKBOX (Brown Theme) */
+.custom-checkbox { position: relative; display: inline-block; width: 22px; height: 22px; cursor: pointer; top: 2px;}
+.custom-checkbox input { opacity: 0; width: 0; height: 0; }
+.checkmark { position: absolute; top: 0; left: 0; height: 22px; width: 22px; background-color: #faf9f6; border-radius: 6px; border: 2px solid #a1887f; transition: all 0.2s; }
+.custom-checkbox:hover input ~ .checkmark { background-color: #efebe9; }
+.custom-checkbox input:checked ~ .checkmark { background-color: #5d4037; border-color: #5d4037; }
+.checkmark:after { content: ""; position: absolute; display: none; }
+.custom-checkbox input:checked ~ .checkmark:after { display: block; }
+.custom-checkbox .checkmark:after { left: 7px; top: 3px; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 
-.strip-right { display: flex; align-items: center; gap: 15px; }
-.prio-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.prio-dot.high { background: #ef4444; box-shadow: 0 0 5px #fecaca; }
-.prio-dot.medium { background: #f97316; }
-.prio-dot.low { background: #10b981; }
+/* TAGS */
+.strip-meta { display: flex; gap: 8px; align-items: center; }
+.meta-tag { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+.date-tag { background: #efebe9; color: #5d4037; }
 
-.del-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #cbd5e1;
-  cursor: pointer;
-  line-height: 1;
-}
-.del-btn:hover { color: #ef4444; }
+/* Priority Tags (Muted for Brown Theme) */
+.prio-tag.high { background: #ffccbc; color: #bf360c; } /* Muted Red */
+.prio-tag.medium { background: #ffe0b2; color: #e65100; } /* Muted Orange */
+.prio-tag.low { background: #d7ccc8; color: #3e2723; }   /* Coffee color */
 
-.is-done { opacity: 0.6; }
-.is-done .strip-text { text-decoration: line-through; color: #94a3b8; }
+/* DELETE BTN */
+.icon-btn { background: transparent; border: none; padding: 8px; border-radius: 8px; color: #d7ccc8; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.icon-btn:hover { background: #ffebee; color: #c62828; }
 
-.zero-state { text-align: center; margin-top: 50px; color: #94a3b8; }
+/* STATES */
+.is-done { opacity: 0.5; background: #faf9f6; }
+.is-done .strip-text { text-decoration: line-through; }
+.text-brown-light { color: #d7ccc8; }
+.zero-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; text-align: center; color: #a1887f; }
+
+/* Animation */
+.list-enter-active, .list-leave-active { transition: all 0.3s ease; }
+.list-enter-from, .list-leave-to { opacity: 0; transform: translateX(20px); }
 </style>

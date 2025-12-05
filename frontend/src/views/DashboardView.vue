@@ -1,225 +1,254 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  CheckSquare,
+  Lightbulb,
+  Hourglass,
+  BarChart3,
+  Calendar,
+  ArrowRight
+} from 'lucide-vue-next'
+
+const router = useRouter()
+
+// Dynamic Date
+const today = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+})
+
+// Tools Configuration
+const tools = [
+  {
+    id: 'tasks',
+    title: 'Task Manager',
+    desc: 'Organize your daily to-dos.',
+    icon: CheckSquare,
+    path: '/tasks',
+    color: 'text-brown'
+  },
+  {
+    id: 'ideas',
+    title: 'Idea Notes',
+    desc: 'Capture thoughts instantly.',
+    icon: Lightbulb,
+    path: '/notes',
+    color: 'text-orange'
+  },
+  {
+    id: 'focus',
+    title: 'Focus Mode',
+    desc: 'Timer for deep work sessions.',
+    icon: Hourglass,
+    path: '/focus-timer',
+    color: 'text-mocha'
+  },
+  {
+    id: 'analytics',
+    title: 'Analytics',
+    desc: 'View your productivity stats.',
+    icon: BarChart3,
+    path: '/analytics',
+    color: 'text-dark'
+  }
+]
+</script>
+
 <template>
   <div class="dashboard-container">
 
-    <section class="welcome-banner">
+    <div class="welcome-banner">
       <div class="banner-content">
-        <h1 class="greeting">Something interesting! </h1>
-        <p class="sub-greeting">
-          Track tasks, capture ideas, and stay focused.
+        <h1 class="banner-title">Welcome to Orbit.</h1>
+        <p class="banner-subtitle">
+          Track tasks, capture ideas, and stay focused on what matters.
         </p>
+
+        <div class="date-pill">
+          <Calendar size="16" />
+          <span>{{ today }}</span>
+        </div>
       </div>
+
       <div class="banner-decoration"></div>
-    </section>
+    </div>
 
-    <div class="stats-overview">
-      <div class="stat-pill">
-        <span class="icon">📅</span>
-        <span>{{ dateDisplay }}</span>
+    <div class="section-header">
+      <h2>Explore your Tools</h2>
+    </div>
+
+    <div class="tools-grid">
+      <div
+        v-for="tool in tools"
+        :key="tool.id"
+        class="tool-card"
+        @click="router.push(tool.path)"
+      >
+        <div class="icon-wrapper">
+          <component :is="tool.icon" :size="28" :class="tool.color" />
+        </div>
+
+        <div class="card-text">
+          <h3>{{ tool.title }}</h3>
+          <p>{{ tool.desc }}</p>
+        </div>
+
+        <div class="hover-arrow">
+          <ArrowRight size="20" />
+        </div>
       </div>
     </div>
 
-    <h2 class="section-title">Explore your Tools</h2>
-    <div class="features-grid">
-
-      <router-link to="/tasks" class="feature-card task-card">
-        <div class="card-icon">✅</div>
-        <div class="card-info">
-          <h3>Task Manager</h3>
-          <p>Organize your tasks with priority!</p>
-        </div>
-        <span class="arrow">→</span>
-      </router-link>
-
-      <router-link to="/notes" class="feature-card note-card">
-        <div class="card-icon">💡</div>
-        <div class="card-info">
-          <h3>Idea Notes</h3>
-          <p> Put in your ideas!!</p>
-        </div>
-        <span class="arrow">→</span>
-      </router-link>
-
-      <router-link to="/focus-timer" class="feature-card focus-card">
-        <div class="card-icon">⏳</div>
-        <div class="card-info">
-          <h3>Focus Mode</h3>
-          <p>Time your sessions!</p>
-        </div>
-        <span class="arrow">→</span>
-      </router-link>
-
-      <router-link to="/analytics" class="feature-card analytics-card">
-        <div class="card-icon">📊</div>
-        <div class="card-info">
-          <h3>Analytics</h3>
-          <p>Visualize your productivity!</p>
-        </div>
-        <span class="arrow">→</span>
-      </router-link>
-
-    </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: "DashboardView",
-  computed: {
-    dateDisplay() {
-      const options = { weekday: 'long', month: 'long', day: 'numeric' };
-      return new Date().toLocaleDateString('en-US', options);
-    }
-  }
-};
-</script>
-
 <style scoped>
+/* PAGE LAYOUT */
 .dashboard-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 40px;
+  background-color: #faf9f6; /* Off-white Paper Background */
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  color: #3e2723;
 }
 
+/* BANNER */
 .welcome-banner {
-  position: relative;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  /* MOCHA GRADIENT */
+  background: linear-gradient(135deg, #6d4c41 0%, #3e2723 100%);
   border-radius: 24px;
-  padding: 3rem;
+  padding: 60px;
   color: white;
-  overflow: hidden;
-  margin-bottom: 2rem;
-  box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.4);
-}
-
-.banner-content {
   position: relative;
-  z-index: 2;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -10px rgba(62, 39, 35, 0.3);
+  margin-bottom: 50px;
 }
 
-.greeting {
-  font-size: 2.5rem;
+.banner-content { position: relative; z-index: 2; }
+
+.banner-title {
+  font-size: 3rem;
   font-weight: 800;
-  margin-bottom: 0.5rem;
+  margin: 0 0 10px 0;
   letter-spacing: -1px;
 }
 
-.sub-greeting {
-  font-size: 1.1rem;
+.banner-subtitle {
+  font-size: 1.2rem;
   opacity: 0.9;
+  margin-bottom: 30px;
+  font-weight: 400;
   max-width: 600px;
-  line-height: 1.6;
 }
 
-.banner-decoration::after {
-  content: "";
+/* DECORATION (Subtle Circle) */
+.banner-decoration {
   position: absolute;
-  bottom: -20%;
-  left: -50%;
-  width: 300px;
-  height: 300px;
-  background: rgba(255, 255, 255, 0.1);
+  top: -50%; right: -10%;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
   border-radius: 50%;
+  z-index: 1;
 }
 
-.stats-overview {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 3rem;
-}
-
-.stat-pill {
-  background: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  display: flex;
+/* DATE PILL */
+.date-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #64748b;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-
-.section-title {
+/* TOOLS SECTION */
+.section-header h2 {
   font-size: 1.5rem;
-  color: #1e293b;
   font-weight: 700;
-  margin-bottom: 1.5rem;
+  color: #3e2723;
+  margin-bottom: 25px;
 }
 
-.features-grid {
+.tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
 }
 
-.feature-card {
+/* CARDS */
+.tool-card {
   background: white;
-  padding: 2rem;
+  padding: 30px;
   border-radius: 20px;
+  border: 1px solid #efebe9;
+  box-shadow: 0 4px 6px rgba(62, 39, 35, 0.02);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 220px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
-  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+  gap: 20px;
   position: relative;
-  overflow: hidden;
 }
 
-.feature-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.2);
-  border-color: #e0e7ff;
+.tool-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px -5px rgba(62, 39, 35, 0.1);
+  border-color: #d7ccc8;
 }
 
-/* Card Content */
-.card-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  background: #f8fafc;
-  width: 60px;
-  height: 60px;
+/* ICONS */
+.icon-wrapper {
+  width: 60px; height: 60px;
+  background: #fdfbf7; /* Cream background */
   border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
 }
 
-.card-info h3 {
+.tool-card:hover .icon-wrapper {
+  background: #efebe9; /* Slightly darker cream on hover */
+}
+
+/* Icon Colors (Brown Theme Variants) */
+.text-brown { color: #5d4037; }  /* Dark Coffee */
+.text-orange { color: #e65100; } /* Burnt Orange */
+.text-mocha { color: #8d6e63; }  /* Latte */
+.text-dark { color: #3e2723; }   /* Espresso */
+
+/* TEXT */
+.card-text h3 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  color: #3e2723;
+  margin: 0 0 5px 0;
 }
-
-.card-info p {
+.card-text p {
   font-size: 0.95rem;
-  color: #64748b;
+  color: #8d6e63;
   line-height: 1.5;
 }
 
-.arrow {
+
+.hover-arrow {
   position: absolute;
-  bottom: 2rem;
-  right: 2rem;
-  font-size: 1.5rem;
-  color: #6366f1; /* Primary Color */
+  bottom: 30px; right: 30px;
   opacity: 0;
   transform: translateX(-10px);
   transition: all 0.3s ease;
+  color: #d7ccc8;
 }
 
-.feature-card:hover .arrow {
+.tool-card:hover .hover-arrow {
   opacity: 1;
   transform: translateX(0);
+  color: #5d4037;
 }
-
-/* Hover Accents (Subtle border colors) */
-.task-card:hover { border-top: 4px solid #3b82f6; }
-.note-card:hover { border-top: 4px solid #8b5cf6; }
-.focus-card:hover { border-top: 4px solid #f59e0b; }
-.analytics-card:hover { border-top: 4px solid #10b981; }
 </style>

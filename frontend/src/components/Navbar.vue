@@ -15,7 +15,6 @@
 export default {
   computed: {
     currentPageTitle() {
-      // Simple logic to capitalize current path name
       const path = this.$route.path.replace('/', '') || 'Dashboard';
       return path.charAt(0).toUpperCase() + path.slice(1).replace('-', ' ');
     }

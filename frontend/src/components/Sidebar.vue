@@ -1,48 +1,74 @@
+<script setup>
+import { ref } from 'vue'
+import {
+  Zap,
+  CheckSquare,
+  Lightbulb,
+  Hourglass,
+  BarChart3,
+  Sparkles
+} from 'lucide-vue-next'
+
+const activeItem = ref('My Tasks')
+
+const menuItems = [
+  { name: 'Dashboard', icon: Zap },
+  { name: 'My Tasks', icon: CheckSquare },
+  { name: 'Ideas', icon: Lightbulb },
+  { name: 'Focus', icon: Hourglass },
+  { name: 'Analytics', icon: BarChart3 },
+]
+</script>
+
 <template>
   <aside class="sidebar">
     <div class="brand">
+      <div class="logo-shape">
+        <Sparkles size="20" color="white" />
+      </div>
+      <span class="brand-name">Orbit</span>
     </div>
 
     <nav class="menu">
       <p class="menu-label">MAIN</p>
 
-      <router-link to="/" class="nav-link" active-class="active">
-        <span class="icon">⚡</span> Dashboard
-      </router-link>
-
-      <router-link to="/tasks" class="nav-link" active-class="active">
-        <span class="icon">✅</span> My Tasks
-      </router-link>
-
-      <router-link to="/notes" class="nav-link" active-class="active">
-        <span class="icon">💡</span> Ideas
-      </router-link>
-
-      <router-link to="/focus-timer" class="nav-link" active-class="active">
-        <span class="icon">⏳</span> Focus
-      </router-link>
-
-      <p class="menu-label" style="margin-top: 20px;">DATA</p>
-      <router-link to="/analytics" class="nav-link" active-class="active">
-        <span class="icon">📊</span> Analytics
-      </router-link>
+      <div
+        v-for="item in menuItems"
+        :key="item.name"
+        @click="activeItem = item.name"
+        class="nav-link"
+        :class="{ 'active': activeItem === item.name }"
+      >
+        <component
+          :is="item.icon"
+          :size="20"
+          stroke-width="2.5"
+          class="icon"
+        />
+        <span>{{ item.name }}</span>
+      </div>
     </nav>
-
   </aside>
 </template>
 
-
 <style scoped>
+/* --- THEME VARIABLES --- */
+:root {
+  --primary-brown: #795548;
+  --dark-brown: #3E2723;
+  --light-cream: #F5F0E6;
+  --text-main: #2c2420;
+}
+
 .sidebar {
-  width: 250px; /* Fixed width if variable is missing */
+  width: 260px;
   height: 100vh;
-  background: #ffffff; /* Changed to pure white for cleaner look */
-  border-right: 1px solid rgba(0,0,0,0.05);
+  background: #ffffff;
+  border-right: 1px solid #f0eadd; /* Warm border */
   display: flex;
   flex-direction: column;
   padding: 2rem 1.5rem;
-  box-shadow: 5px 0 30px rgba(0,0,0,0.02);
-  z-index: 50;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 /* Brand */
@@ -54,30 +80,28 @@
   padding-left: 10px;
 }
 .logo-shape {
-  width: 40px; height: 40px;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); /* Purple gradient */
+  width: 42px; height: 42px;
+  /* COFFEE GRADIENT */
+  background: linear-gradient(135deg, #8D6E63 0%, #4E342E 100%);
   border-radius: 12px;
   display: flex;
   align-items: center; justify-content: center;
-  font-size: 1.2rem;
-  color: white;
-  box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 15px -3px rgba(121, 85, 72, 0.3);
 }
 .brand-name {
-  font-size: 1.5rem;
-  font-weight: 800; /* Extra Bold */
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #3E2723; /* Dark Coffee Text */
   letter-spacing: -0.5px;
-  color: #111827; /* Solid Black */
 }
 
 /* Menu */
-.menu { flex: 1; }
 .menu-label {
   font-size: 0.75rem;
-  font-weight: 800; /* Bold */
-  color: #9ca3af; /* Gray for labels is fine */
+  font-weight: 800;
+  color: #a1887f; /* Light Brown Text */
   letter-spacing: 1px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   padding-left: 12px;
 }
 
@@ -85,33 +109,31 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  cursor: pointer;
 
-  /* --- CHANGED HERE: Black and Bold --- */
-  color: #111827; /* Dark Black */
-  font-weight: 700; /* Bold */
+  /* DEFAULT STATE: Dark warm grey/brown */
+  color: #5d4037;
+  font-weight: 700;
 
   transition: all 0.2s ease;
-  margin-bottom: 4px;
-  text-decoration: none;
+  margin-bottom: 6px;
 }
 
-/* Hover State */
 .nav-link:hover {
-  background: #f3f4f6; /* Light Gray */
-  color: #000000;
+  background: #fff8e1; /* Very light cream hover */
+  color: #3e2723;
   transform: translateX(3px);
 }
 
-
+/* --- ACTIVE STATE (Brown & White Theme) --- */
 .nav-link.active {
-  background: #eef2ff; /* Light Purple Background */
-  color: #4f46e5;      /* Dark Purple Text (Visible!) */
-  box-shadow: none;    /* Removed heavy shadow for cleaner look */
+  background: #efebe9; /* Latte background */
+  color: #5d4037;      /* Strong Brown Text */
 }
 
-.nav-link.active .icon { opacity: 1; }
-.icon { font-size: 1.1rem; opacity: 1; } /* Made icons fully visible */
+.icon { opacity: 0.8; transition: 0.2s; }
+.nav-link.active .icon { opacity: 1; color: #3e2723; }
 
 </style>
