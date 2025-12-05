@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from 'vue'
 import {
   Zap,
   CheckSquare,
@@ -9,14 +8,15 @@ import {
   Sparkles
 } from 'lucide-vue-next'
 
-const activeItem = ref('My Tasks')
+// We don't need 'activeItem' ref anymore!
+// Vue Router handles the active state automatically.
 
 const menuItems = [
-  { name: 'Dashboard', icon: Zap },
-  { name: 'My Tasks', icon: CheckSquare },
-  { name: 'Ideas', icon: Lightbulb },
-  { name: 'Focus', icon: Hourglass },
-  { name: 'Analytics', icon: BarChart3 },
+  { name: 'Dashboard', icon: Zap, path: '/' },
+  { name: 'My Tasks', icon: CheckSquare, path: '/tasks' },
+  { name: 'Ideas', icon: Lightbulb, path: '/notes' },
+  { name: 'Focus', icon: Hourglass, path: '/focus-timer' },
+  { name: 'Analytics', icon: BarChart3, path: '/analytics' },
 ]
 </script>
 
@@ -32,12 +32,12 @@ const menuItems = [
     <nav class="menu">
       <p class="menu-label">MAIN</p>
 
-      <div
+      <router-link
         v-for="item in menuItems"
         :key="item.name"
-        @click="activeItem = item.name"
+        :to="item.path"
         class="nav-link"
-        :class="{ 'active': activeItem === item.name }"
+        active-class="active"
       >
         <component
           :is="item.icon"
@@ -46,7 +46,7 @@ const menuItems = [
           class="icon"
         />
         <span>{{ item.name }}</span>
-      </div>
+      </router-link>
     </nav>
   </aside>
 </template>
@@ -105,6 +105,7 @@ const menuItems = [
   padding-left: 12px;
 }
 
+/* NAV LINK STYLES */
 .nav-link {
   display: flex;
   align-items: center;
@@ -112,6 +113,7 @@ const menuItems = [
   padding: 14px 16px;
   border-radius: 14px;
   cursor: pointer;
+  text-decoration: none; /* Remove underline from links */
 
   /* DEFAULT STATE: Dark warm grey/brown */
   color: #5d4037;
@@ -127,7 +129,7 @@ const menuItems = [
   transform: translateX(3px);
 }
 
-/* --- ACTIVE STATE (Brown & White Theme) --- */
+/* --- ACTIVE STATE (Auto-applied by Vue Router) --- */
 .nav-link.active {
   background: #efebe9; /* Latte background */
   color: #5d4037;      /* Strong Brown Text */

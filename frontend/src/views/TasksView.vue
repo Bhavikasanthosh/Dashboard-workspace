@@ -19,6 +19,7 @@
       <div class="dashboard-grid">
 
         <aside class="side-panel">
+
           <div class="panel-card create-card">
             <h3 class="card-title">New Entry</h3>
 
@@ -125,7 +126,9 @@ export default {
     };
   },
   computed: {
-    completedTasks() { return this.tasks.filter(t => t.done).length; },
+    completedTasks() {
+      return this.tasks.filter(t => t.done).length;
+    },
     progressPercent() {
       if (this.tasks.length === 0) return 0;
       return Math.round((this.completedTasks / this.tasks.length) * 100);
@@ -133,6 +136,7 @@ export default {
     sortedTasks() {
       const order = { high: 1, medium: 2, low: 3 };
       return [...this.tasks].sort((a, b) => {
+        // Sort by done status (pending first), then by priority
         if (a.done !== b.done) return a.done ? 1 : -1;
         const pA = a.priority ? a.priority.toLowerCase() : 'medium';
         const pB = b.priority ? b.priority.toLowerCase() : 'medium';
@@ -148,7 +152,9 @@ export default {
           this.tasks = await res.json();
           this.$nextTick(() => this.renderChart());
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Failed to fetch tasks");
+      }
     },
     async addTask() {
       if (!this.newTask.trim()) return;
@@ -169,7 +175,9 @@ export default {
           this.newTask = "";
           this.renderChart();
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Error adding task");
+      }
     },
     async deleteTask(id) {
       if (!confirm("Delete this task?")) return;
@@ -179,24 +187,34 @@ export default {
           this.tasks = this.tasks.filter(t => t._id !== id);
           this.renderChart();
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Error deleting task");
+      }
     },
     async toggleTaskStatus(task) {
-      this.renderChart();
+      this.renderChart(); // Update chart immediately
       try {
         await fetch(`/api/tasks/${task._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ done: task.done }),
         });
-      } catch (err) { task.done = !task.done; this.renderChart(); }
+      } catch (err) {
+        // Revert if API fails
+        task.done = !task.done;
+        this.renderChart();
+      }
     },
     formatDate(d) {
       if (!d) return "";
       return new Date(d).toLocaleDateString("en-GB", { month: "short", day: "numeric" });
     },
     renderChart() {
-      if (this.chart) { this.chart.destroy(); this.chart = null; }
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+
       const activeTasks = this.tasks.filter(t => !t.done);
       if (activeTasks.length === 0) return;
 
@@ -214,9 +232,13 @@ export default {
         data: {
           labels: ["High", "Medium", "Low"],
           datasets: [{
-            // CHART COLORS: Muted Earth Tones
             data: [counts.high, counts.medium, counts.low],
-            backgroundColor: ["#D84315", "#FB8C00", "#6D4C41"],
+            // --- UPDATED COLORS TO MATCH BROWN THEME ---
+            backgroundColor: [
+              "#3e2723",  // High: Dark Espresso
+              "#8d6e63",  // Medium: Smooth Mocha
+              "#d7ccc8"   // Low: Light Latte
+            ],
             borderWidth: 0,
             hoverOffset: 4
           }],
@@ -230,7 +252,9 @@ export default {
       });
     },
   },
-  mounted() { this.fetchTasks(); },
+  mounted() {
+    this.fetchTasks();
+  },
 };
 </script>
 
@@ -261,7 +285,6 @@ export default {
   border: 1px solid #efebe9;
 }
 .pill-track { width: 140px; height: 8px; background: #efebe9; border-radius: 4px; overflow: hidden; }
-/* Brown Gradient Fill */
 .pill-fill { height: 100%; background: linear-gradient(90deg, #8d6e63, #5d4037); transition: width 0.5s ease; }
 .pill-text { font-size: 0.85rem; font-weight: 700; color: #5d4037; }
 
@@ -282,7 +305,7 @@ export default {
 .create-card { display: flex; flex-direction: column; gap: 16px; }
 .modern-input, .modern-select {
   width: 100%; padding: 12px 16px;
-  background: #fdfbf7; /* Very light cream */
+  background: #fdfbf7;
   border: 1px solid #d7ccc8;
   border-radius: 12px;
   font-size: 0.95rem; color: #3e2723;
@@ -297,9 +320,9 @@ export default {
 .input-wrapper { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .input-wrapper label { font-size: 0.75rem; font-weight: 700; color: #8d6e63; }
 
-/* BUTTON (Brown) */
+/* BUTTON */
 .primary-btn {
-  background: #5d4037; /* Dark Coffee */
+  background: #5d4037;
   color: white; border: none; padding: 14px; border-radius: 12px;
   font-weight: 600; font-size: 1rem; cursor: pointer;
   transition: transform 0.1s, background 0.2s; margin-top: 10px;
@@ -323,7 +346,7 @@ export default {
 .strip-info { display: flex; flex-direction: column; gap: 4px; }
 .strip-text { font-size: 1.05rem; font-weight: 600; color: #3e2723; }
 
-/* CHECKBOX (Brown Theme) */
+/* CHECKBOX */
 .custom-checkbox { position: relative; display: inline-block; width: 22px; height: 22px; cursor: pointer; top: 2px;}
 .custom-checkbox input { opacity: 0; width: 0; height: 0; }
 .checkmark { position: absolute; top: 0; left: 0; height: 22px; width: 22px; background-color: #faf9f6; border-radius: 6px; border: 2px solid #a1887f; transition: all 0.2s; }
@@ -338,10 +361,10 @@ export default {
 .meta-tag { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
 .date-tag { background: #efebe9; color: #5d4037; }
 
-/* Priority Tags (Muted for Brown Theme) */
-.prio-tag.high { background: #ffccbc; color: #bf360c; } /* Muted Red */
-.prio-tag.medium { background: #ffe0b2; color: #e65100; } /* Muted Orange */
-.prio-tag.low { background: #d7ccc8; color: #3e2723; }   /* Coffee color */
+/* PRIORITY TAGS (Muted Brown Theme) */
+.prio-tag.high { background: #ffccbc; color: #bf360c; }
+.prio-tag.medium { background: #ffe0b2; color: #e65100; }
+.prio-tag.low { background: #d7ccc8; color: #3e2723; }
 
 /* DELETE BTN */
 .icon-btn { background: transparent; border: none; padding: 8px; border-radius: 8px; color: #d7ccc8; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
@@ -353,7 +376,7 @@ export default {
 .text-brown-light { color: #d7ccc8; }
 .zero-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; text-align: center; color: #a1887f; }
 
-/* Animation */
+/* ANIMATION */
 .list-enter-active, .list-leave-active { transition: all 0.3s ease; }
 .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(20px); }
 </style>

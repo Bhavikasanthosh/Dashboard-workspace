@@ -1,137 +1,137 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+
+const handleLogin = () => {
+  // 1. Get the account details you saved during Sign Up
+  const savedEmail = localStorage.getItem('storedEmail')
+  const savedPassword = localStorage.getItem('storedPassword')
+
+  // 2. CHECK: Do the typed details match the saved ones?
+  if (email.value === savedEmail && password.value === savedPassword) {
+
+    // Success! Save a "flag" so the browser knows you are logged in
+    localStorage.setItem('isAuthenticated', 'true')
+
+    // Visual feedback
+    alert('Login Successful! Welcome back.')
+
+    // Redirect to Dashboard
+    router.push('/')
+
+  } else {
+    // Failure
+    alert('Invalid Email or Password. (Did you use the same one from Sign Up?)')
+  }
+}
+</script>
+
 <template>
-  <div class="login-card">
-    <h1 class="title">Welcome Back</h1>
-    <p class="subtitle">Enter your credentials to access your workspace.</p>
-
-    <form @submit.prevent="handleLogin">
-      <div class="input-group">
-        <label>Email</label>
-        <input v-model="email" type="email" placeholder="name@example.com" required />
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Sign in to continue to your workspace.</p>
       </div>
 
-      <div class="input-group">
-        <label>Password</label>
-        <input v-model="password" type="password" placeholder="••••••••" required />
+      <form @submit.prevent="handleLogin" class="auth-form">
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            class="modern-input"
+            placeholder="name@example.com"
+            required
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            class="modern-input"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <button type="submit" class="primary-btn">
+          Sign In
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>New here? <router-link to="/signup" class="link-text">Create an account</router-link></p>
       </div>
-
-      <button type="submit" class="login-btn">Sign In</button>
-    </form>
-
-    <p class="footer-text">
-      New here? <router-link to="/signup">Create an account</router-link>
-    </p>
+    </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: "LoginView",
-  data() {
-    return { email: "", password: "" };
-  },
-  methods: {
-    async handleLogin() {
-      try {
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: this.email, password: this.password }),
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-          localStorage.setItem("token", data.token);
-          this.$router.push("/"); // Redirect to Dashboard
-        } else {
-          alert(data.message);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    },
-  },
-};
-</script>
-
 <style scoped>
-.login-card {
+/* --- BROWN & WHITE THEME --- */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #faf9f6;
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.auth-card {
   background: white;
-  width: 100%;
-  max-width: 400px; /* Restricts width for readability */
   padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 30px -10px rgba(62, 39, 35, 0.1);
+  border: 1px solid #efebe9;
   text-align: center;
-  border: 1px solid #e2e8f0;
 }
 
-.title {
-  margin-bottom: 10px;
-  color: #1e293b;
-  font-size: 24px;
-  font-weight: 700;
+.auth-header { margin-bottom: 30px; }
+.auth-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #3e2723;
+  margin: 0 0 10px 0;
+}
+.auth-subtitle { color: #8d6e63; font-size: 1rem; }
+
+.auth-form {
+  display: flex; flex-direction: column; gap: 20px; margin-bottom: 25px; text-align: left;
 }
 
-.subtitle {
-  margin-bottom: 30px;
-  color: #64748b;
-  font-size: 14px;
+.input-group { display: flex; flex-direction: column; gap: 8px; }
+.input-group label { font-size: 0.9rem; font-weight: 600; color: #5d4037; }
+
+.modern-input {
+  width: 100%; padding: 14px 16px;
+  background: #fdfbf7; border: 1px solid #d7ccc8; border-radius: 12px;
+  font-size: 1rem; color: #3e2723; transition: all 0.2s;
+}
+.modern-input:focus {
+  background: white; border-color: #8d6e63; outline: none;
+  box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1);
 }
 
-.input-group {
-  margin-bottom: 20px;
-  text-align: left;
+.primary-btn {
+  background: #5d4037; color: white; border: none; padding: 16px; border-radius: 12px;
+  font-weight: 700; font-size: 1.1rem; cursor: pointer;
+  transition: transform 0.1s, background 0.2s; margin-top: 10px;
 }
+.primary-btn:hover { background: #4e342e; transform: translateY(-1px); }
 
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  outline: none;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-input:focus {
-  border-color: #3b82f6; /* Focus Blue */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.login-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.login-btn:hover {
-  background-color: #1d4ed8;
-}
-
-.footer-text {
-  margin-top: 20px;
-  font-size: 14px;
-  color: #64748b;
-}
-
-.footer-text a {
-  color: #2563eb;
-  text-decoration: none;
-  font-weight: 600;
-}
+.auth-footer p { color: #8d6e63; font-size: 0.95rem; }
+.link-text { color: #e65100; font-weight: 700; text-decoration: none; }
+.link-text:hover { color: #bf360c; }
 </style>

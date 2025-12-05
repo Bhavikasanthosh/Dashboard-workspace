@@ -29,7 +29,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login', '/signup'];
   const authRequired = !publicPages.includes(to.path);
-  const loggedIn = localStorage.getItem('token');
+
+  // --- FIX IS HERE: Change 'token' to 'isAuthenticated' ---
+  const loggedIn = localStorage.getItem('isAuthenticated');
 
   if (authRequired && !loggedIn) {
     return next('/login');

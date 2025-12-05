@@ -25,7 +25,7 @@ const tools = [
   {
     id: 'tasks',
     title: 'Task Manager',
-    desc: 'Organize your daily to-dos.',
+    desc: '-',
     icon: CheckSquare,
     path: '/tasks',
     color: 'text-brown'
@@ -33,7 +33,7 @@ const tools = [
   {
     id: 'ideas',
     title: 'Idea Notes',
-    desc: 'Capture thoughts instantly.',
+    desc: '-',
     icon: Lightbulb,
     path: '/notes',
     color: 'text-orange'
@@ -41,7 +41,7 @@ const tools = [
   {
     id: 'focus',
     title: 'Focus Mode',
-    desc: 'Timer for deep work sessions.',
+    desc: '-',
     icon: Hourglass,
     path: '/focus-timer',
     color: 'text-mocha'
@@ -49,7 +49,7 @@ const tools = [
   {
     id: 'analytics',
     title: 'Analytics',
-    desc: 'View your productivity stats.',
+    desc: '-',
     icon: BarChart3,
     path: '/analytics',
     color: 'text-dark'
@@ -64,7 +64,7 @@ const tools = [
       <div class="banner-content">
         <h1 class="banner-title">Welcome to Orbit.</h1>
         <p class="banner-subtitle">
-          Track tasks, capture ideas, and stay focused on what matters.
+          -
         </p>
 
         <div class="date-pill">
@@ -106,18 +106,18 @@ const tools = [
 </template>
 
 <style scoped>
-/* PAGE LAYOUT */
+
 .dashboard-container {
   padding: 40px;
-  background-color: #faf9f6; /* Off-white Paper Background */
+  background-color: #faf9f6;
   min-height: 100vh;
   font-family: 'Segoe UI', sans-serif;
   color: #3e2723;
 }
 
-/* BANNER */
+
 .welcome-banner {
-  /* MOCHA GRADIENT */
+
   background: linear-gradient(135deg, #6d4c41 0%, #3e2723 100%);
   border-radius: 24px;
   padding: 60px;
@@ -145,7 +145,7 @@ const tools = [
   max-width: 600px;
 }
 
-/* DECORATION (Subtle Circle) */
+
 .banner-decoration {
   position: absolute;
   top: -50%; right: -10%;
@@ -155,7 +155,7 @@ const tools = [
   z-index: 1;
 }
 
-/* DATE PILL */
+
 .date-pill {
   display: inline-flex;
   align-items: center;
@@ -169,7 +169,7 @@ const tools = [
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* TOOLS SECTION */
+
 .section-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -183,7 +183,7 @@ const tools = [
   gap: 25px;
 }
 
-/* CARDS */
+
 .tool-card {
   background: white;
   padding: 30px;
@@ -204,26 +204,26 @@ const tools = [
   border-color: #d7ccc8;
 }
 
-/* ICONS */
+
 .icon-wrapper {
   width: 60px; height: 60px;
-  background: #fdfbf7; /* Cream background */
+  background: #fdfbf7;
   border-radius: 16px;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.3s;
 }
 
 .tool-card:hover .icon-wrapper {
-  background: #efebe9; /* Slightly darker cream on hover */
+  background: #efebe9;
 }
 
-/* Icon Colors (Brown Theme Variants) */
-.text-brown { color: #5d4037; }  /* Dark Coffee */
-.text-orange { color: #e65100; } /* Burnt Orange */
-.text-mocha { color: #8d6e63; }  /* Latte */
-.text-dark { color: #3e2723; }   /* Espresso */
 
-/* TEXT */
+.text-brown { color: #5d4037; }
+.text-orange { color: #e65100; }
+.text-mocha { color: #8d6e63; }
+.text-dark { color: #3e2723; }
+
+
 .card-text h3 {
   font-size: 1.25rem;
   font-weight: 700;
