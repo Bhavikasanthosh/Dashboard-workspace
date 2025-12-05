@@ -8,8 +8,7 @@ import {
   Sparkles
 } from 'lucide-vue-next'
 
-// We don't need 'activeItem' ref anymore!
-// Vue Router handles the active state automatically.
+
 
 const menuItems = [
   { name: 'Dashboard', icon: Zap, path: '/' },
@@ -26,7 +25,6 @@ const menuItems = [
       <div class="logo-shape">
         <Sparkles size="20" color="white" />
       </div>
-      <span class="brand-name">Orbit</span>
     </div>
 
     <nav class="menu">
@@ -52,7 +50,7 @@ const menuItems = [
 </template>
 
 <style scoped>
-/* --- THEME VARIABLES --- */
+
 :root {
   --primary-brown: #795548;
   --dark-brown: #3E2723;
@@ -64,14 +62,14 @@ const menuItems = [
   width: 260px;
   height: 100vh;
   background: #ffffff;
-  border-right: 1px solid #f0eadd; /* Warm border */
+  border-right: 1px solid #f0eadd;
   display: flex;
   flex-direction: column;
   padding: 2rem 1.5rem;
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* Brand */
+
 .brand {
   display: flex;
   align-items: center;
@@ -81,7 +79,7 @@ const menuItems = [
 }
 .logo-shape {
   width: 42px; height: 42px;
-  /* COFFEE GRADIENT */
+
   background: linear-gradient(135deg, #8D6E63 0%, #4E342E 100%);
   border-radius: 12px;
   display: flex;
@@ -115,7 +113,7 @@ const menuItems = [
   cursor: pointer;
   text-decoration: none; /* Remove underline from links */
 
-  /* DEFAULT STATE: Dark warm grey/brown */
+
   color: #5d4037;
   font-weight: 700;
 
@@ -129,7 +127,7 @@ const menuItems = [
   transform: translateX(3px);
 }
 
-/* --- ACTIVE STATE (Auto-applied by Vue Router) --- */
+
 .nav-link.active {
   background: #efebe9; /* Latte background */
   color: #5d4037;      /* Strong Brown Text */

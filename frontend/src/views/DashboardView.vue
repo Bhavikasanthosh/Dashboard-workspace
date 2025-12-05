@@ -62,7 +62,7 @@ const tools = [
 
     <div class="welcome-banner">
       <div class="banner-content">
-        <h1 class="banner-title">Welcome to Orbit.</h1>
+        <h1 class="banner-title">Wassupp?</h1>
         <p class="banner-subtitle">
           -
         </p>
